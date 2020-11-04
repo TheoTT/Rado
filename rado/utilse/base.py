@@ -3,7 +3,9 @@
 import xlrd
 import json
 import os
+import re
 
+from xlutils.copy import copy
 from datatest import validate, ValidationError
 from jsonpath import jsonpath
 
@@ -417,3 +419,24 @@ def gen_code_by_excel_dir(excel_file_dir, result_dir):
 def gen_code_by_excel_path(excel_file, result_path):
         model_name = get_model_name(excel_file)
         gen_init_test_code(model_name, excel_file, result_path)
+
+
+def write_excel(case_id, result, excel_file, sheet_num):
+    """
+    将测试结果回填至excel
+    :param case_id: 用例id: test_case_[test_001]
+    :param result: 用例结果[PASSED,FAILED]
+    :param result
+    :return:
+    """
+    # print(f'xxxxxxxxxxxxxxxxx{case_id}')
+    p = re.compile(r'(\[)(.*)(\])') # ['test_001']
+    row = int(list(re.findall(p, case_id)[0])[1].split('_')[-1])
+    book = xlrd.open_workbook(excel_file)
+    logger.log_info('开始回写实际响应结果到用例数据中.')
+    new_excel = copy(book)
+    ws = new_excel.get_sheet(sheet_num)
+    # 11 是 实际响应结果栏在excel中的列数-1
+    ws.write(row, 16, result)
+    new_excel.save(excel_file)
+    logger.log_info(f'写入完毕:-写入文件: {excel_file}, 行号: {row + 1}, 列号: 11, 写入值: {result}')
